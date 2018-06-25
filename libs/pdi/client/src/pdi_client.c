@@ -101,4 +101,3 @@ int pdi_client_send_command(pdi_msg_t *msg){
     close(stdout_pipe_fd);
     return rc;
 }
-
