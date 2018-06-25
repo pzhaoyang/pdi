@@ -18,4 +18,3 @@
 extern unsigned int pdi_debug_port_num;
 
 #endif
-

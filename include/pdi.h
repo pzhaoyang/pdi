@@ -1,4 +1,4 @@
-#ifndef __PDI_H__
+ #ifndef __PDI_H__
 #define __PDI_H__
 
 #include <stdio.h>
@@ -40,11 +40,11 @@ typedef struct {
     char                    buff[PDI_MAX_LINE_LEN+1];        // message payload
 } pdi_msg_t;
 
-typedef struct slnode {                                     // Node of a linked list.
+typedef struct slnode{                                     // Node of a linked list.
     struct slnode           *next;                           // Points at the next node in the list
 } SL_NODE;
 
-typedef struct {
+typedef struct{
     SL_NODE                 hash_node;                          // hash node (must come first)
     const char              *name;                              // pointer to symbol name
     void                    *value;                             // symbol value
@@ -59,7 +59,6 @@ extern SYMBOL               standTbl[];                         // standalone sy
 extern unsigned int         standTblSize;                       // symbols in standalone table
 
 typedef void*   (*PDI_THREAD_FUNCPTR)(void *); 
-typedef int   (*PDI_THREAD_CREATE_FUNCPTR)(PDI_THREAD_FUNCPTR);
+typedef int     (*PDI_THREAD_CREATE_FUNCPTR)(PDI_THREAD_FUNCPTR);
 
 #endif
-

@@ -25,15 +25,15 @@ void pdi_client_prompt_set(char *new_prompt){
 
 int debug_read_string(int fd, register char string[], int maxbytes){
     char c;
-    FAST int nchars = 0;
-    FAST int i = 0;
+    register int nchars = 0;
+    register int i = 0;
 
     while(i < maxbytes){
         if((nchars = read(fd, &c, 1)) == PDI_ERROR){
             break;
         }
 
-        if (nchars != 1 || c == '\n' || c == EOS){
+        if(nchars != 1 || c == '\n' || c == EOS){
             string[i++] = EOS;
             break;
         }
@@ -41,7 +41,7 @@ int debug_read_string(int fd, register char string[], int maxbytes){
         string[i++] = c;
     }
 
-    if (nchars == PDI_ERROR  || (nchars == 0 && i == 1)) {
+    if(nchars == PDI_ERROR  || (nchars == 0 && i == 1)){
         i = EOF;
     }
 
@@ -53,7 +53,7 @@ static void string_trim_right(char * str_to_trim){
 
     str_cursor = str_to_trim + strlen(str_to_trim) - 1;
 
-    while (str_cursor > str_to_trim) {
+    while(str_cursor > str_to_trim){
         if(isspace((int)(*str_cursor))){
             str_cursor--;
         }else{
@@ -73,7 +73,7 @@ static void string_trim_right(char * str_to_trim){
 }
 
 int debug_send_command(){
-    FAST int i=0;
+    register int i=0;
 
     msg.buff[PDI_MAX_LINE_LEN] = EOS;  
 
@@ -81,12 +81,12 @@ int debug_send_command(){
 
     // a '#' char is treated as a comment and the remainder is ignored
     if(msg.buff [i] != '#' && msg.buff [i] != EOS){
-        string_trim_right (&msg.buff[i]);
+        string_trim_right(&msg.buff[i]);
         if (msg.buff[i] == EOS){
             return PDI_OK;
         }
 
-        if(strcmp(&msg.buff [i], "exit") == 0){
+        if(strcmp(&msg.buff[i], "exit") == 0){
             i = 0;
             return PDI_ERROR;
         }
@@ -111,9 +111,10 @@ int debug_send_command(){
 
 void debug_tool_loop(){
     while(TRUE){
-        printf ("%s", prompt_string); fflush(stdout);
+        printf ("%s", prompt_string);
+        fflush(stdout);
 
-        if( debug_read_string (STD_IN, msg.buff, PDI_MAX_LINE_LEN) == EOF ) break;
+        if( debug_read_string(STD_IN, msg.buff, PDI_MAX_LINE_LEN) == EOF ) break;
         
         if( debug_send_command() == PDI_ERROR ) break;
     }
