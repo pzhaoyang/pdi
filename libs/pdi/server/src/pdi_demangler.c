@@ -38,15 +38,8 @@ pdi_demangler_style_p cplusDemanglerStyle = DMGL_STYLE_GNU;
 static char * overloadMatches [MAX_OVERLOAD_SYMS];
 static int overloadMatchCount;
 
-/******************************************************************************
-* FUNCTION: symbolStartOf - skip leading underscore
-*
-* RETURNS: pointer to the start of the symbol name after any compiler 
-*          prepended leading underscore.
-******************************************************************************/
-static const char *symbolStartOf( const char *str )
-{
-    if (CPU_FAMILY_PREPENDS_UNDERSCORE && (str [0] == '_'))
+static const char *symbolStartOf( const char *str ){
+    if(CPU_FAMILY_PREPENDS_UNDERSCORE && (str [0] == '_'))
         return str + 1;
     else
         return str;
@@ -182,67 +175,53 @@ const char * demanglerNameFromStyle(pdi_demangler_style_p style)
     return "unknown";
 }
 
-/******************************************************************************
-* FUNCTION: demangle - decode a C++ mangled name
-*
-* RETURNS: an allocated string or NULL
-******************************************************************************/
-char * demangle( const char * mangledSymbol, 
-                 CPLUS_DEMANGLER_MODES mode)
-{
+
+char * demangle( const char * mangledSymbol, CPLUS_DEMANGLER_MODES mode){
     int options = 0;
 
-    switch (mode) {
-    case DEMANGLER_OFF:
-        {
+    switch (mode){
+        case DEMANGLER_OFF:
             char * result = (char *)malloc(strlen(mangledSymbol) + 1);
-            if (result) {
+            if(result){
                 strcpy(result, mangledSymbol);
             }
             return result;
-        }
-    case TERSE:
-        options = 0;
-        break;
-    case COMPLETE:
-        options = DMGL_PARAMS | DMGL_ANSI;
-        break;
+        case TERSE:
+            options = 0;
+            break;
+        case COMPLETE:
+            options = DMGL_PARAMS | DMGL_ANSI;
+            break;
     }
-    switch (cplusDemanglerStyle) {
-    case DMGL_STYLE_GNU:
-        options |= DMGL_AUTO;
-        break;
-    case DMGL_STYLE_DIAB:
-        options |= DMGL_EDG;
-        break;
-    case DMGL_STYLE_ARM:
-        options |= DMGL_ARM;
-        break;
-    default:
-        options |= DMGL_EDG;
-        break;   
+    
+    switch(cplusDemanglerStyle){
+        case DMGL_STYLE_GNU:
+            options |= DMGL_AUTO;
+            break;
+        case DMGL_STYLE_DIAB:
+            options |= DMGL_EDG;
+            break;
+        case DMGL_STYLE_ARM:
+            options |= DMGL_ARM;
+            break;
+        default:
+            options |= DMGL_EDG;
+            break;   
     }
-    return  cplus_demangle (mangledSymbol, options);
+
+    return  cplus_demangle(mangledSymbol, options);
 }
 
-/******************************************************************************
-* FUNCTION: pdi_cplus_demangle - demangle symbol
-*
-* RETURNS: Destination string if demangling is successful, otherwise 
-*           the source string.
-******************************************************************************/
-const char * pdi_cplus_demangle( const char * source, char * dest, int n, CPLUS_DEMANGLER_MODES mode )
-{
+const char * pdi_cplus_demangle( const char * source, char * dest, int n, CPLUS_DEMANGLER_MODES mode ){
     char *buf;
-
     const char * temp_source = symbolStartOf (source);
 
     buf = demangle(temp_source, mode);
-    if (buf !=0) {
+    if(buf !=0){
         strncpy (dest, buf, n);
-        free (buf);
+        free(buf);
         return dest;
-    } else {
+    }else{
         return temp_source;
     }     
 }

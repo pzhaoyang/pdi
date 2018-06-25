@@ -4,7 +4,7 @@
 #include "stdio.h"
 #include "string.h"
 
-#define SOCK_NAMED_PATH "/tmp/sock_%d"
+#define SOCK_NAMED_PATH         "/tmp/sock_%d"
 
 typedef enum{
     SOCK_STATUS_FAILURE = -1,
@@ -16,4 +16,3 @@ typedef enum{
 } SOCK_STATUS;
 
 #endif
-

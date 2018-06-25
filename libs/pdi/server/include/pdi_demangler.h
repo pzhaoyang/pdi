@@ -1,16 +1,3 @@
-/******************************************************************************
- * Copyright (c) 2013 Ericsson AB.
- * Copyright (c) 2008 Redback Networks, Inc.
- * All rights reserved.
- *
- * This software is the confidential and proprietary information of
- * Redback Networks Inc.
- *
- * Description:
- *
- * Provides a demangler interface.
-******************************************************************************/
-
 #ifndef __DEMANGLER_H__
 #define __DEMANGLER_H__
 

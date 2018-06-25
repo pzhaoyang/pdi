@@ -1,14 +1,3 @@
-/******************************************************************************
- * Copyright (c) 2011 Ericsson AB.
- * Copyright (c) 2008 Redback Networks, Inc.
- * This software is the confidential and proprietary information of
- * Redback Networks Inc.
- *
- * Description:
- *
- * Provides implementation for debug commands.
-******************************************************************************/
-
 #include "pdi_sym_table.h"
 #include "pdi_demangler.h"
 #include <stdio.h>
@@ -18,28 +7,26 @@
 #include <ctype.h>
 #include <unistd.h>
 
-#define DEBUG_USR_DEMANGLE_PRINT_LEN 256  /* Num chars of demangled names to print */
-#define DEBUG_NUM_SYMBLS  3
+#define DEBUG_USR_DEMANGLE_PRINT_LEN        (256)
+#define DEBUG_NUM_SYMBLS                    (3)
+#define PDI_MAX_READ_CHARS                  (4096)  // 4K MAX allowed to prevent abusing
 
-typedef struct      /* SYMBL - symbol table entry used by lkAddr */ {
-    void *addr;     /* address associated with symbol */
-    char *name;     /* points to name in system symbol table */
-    SYM_TYPE type;  /* type of this symbol table entry */
+// SYMBL - symbol table entry used by lkAddr
+typedef struct{
+    void            *addr;
+    char            *name;
+    SYM_TYPE        type;
 } SYMBL;
 
-typedef struct      /* LKADDR_ARG */ {
-    int count;          /* number of entries printed by lkAddr */
-    void *addr;      /* target address */
-    SYMBL symbl[DEBUG_NUM_SYMBLS];
+// LKADDR_ARG
+typedef struct{
+    int             count;
+    void            *addr;
+    SYMBL           symbl[DEBUG_NUM_SYMBLS];
 } LKADDR_ARG;
 
-/******************************************************************************
-* FUNCTION: help - print a synopsis of selected routines
-*
-* RETURNS: N/A
-******************************************************************************/
-void help (void)
-{
+
+void help (void){
     static char *help_msg [] = {
         "help                           Print this list",
         "lkup      [\"substr\"]         List symbols in system symbol table",
@@ -48,32 +35,21 @@ void help (void)
     };
     int ix;
 
-    printf ("\n");
-    for (ix = 0; help_msg [ix] != NULL; ix++) {
-        printf ("%s\n", help_msg [ix]);
+    printf("\n");
+    for(ix = 0; help_msg [ix] != NULL; ix++){
+        printf "%s\n", help_msg [ix]);
     }
-    printf ("\n");
+    printf("\n");
 }
 
-/******************************************************************************
-* FUNCTION: lkup - list symbols
-*
-* RETURNS: none.
-******************************************************************************/
-void lkup( char *substr )
-{
-    pdi_sym_show ( pdi_sym_tbl_id, substr);   /* pdi_sym_show() does the work */
+void lkup(char *substr){
+    pdi_sym_show(pdi_sym_tbl_id, substr);   //pdi_sym_show() does the work
 }
 
-/******************************************************************************
-* FUNCTION: printSTE - print symbol table entry
-*
-* RETURNS: none.
-******************************************************************************/
-void printSTE( void * addr, char * name, SYM_TYPE type )
-{
+
+void printSTE( void * addr, char * name, SYM_TYPE type ){
     char demangled[DEBUG_USR_DEMANGLE_PRINT_LEN + 1];
-    const char *nameToPrint = pdi_cplus_demangle (name, demangled, sizeof (demangled), COMPLETE);
+    const char *nameToPrint = pdi_cplus_demangle(name, demangled, sizeof (demangled), COMPLETE);
 
     printf ("%p %-40s %-8s", addr, nameToPrint, pdi_typeName[(type >> 1) & 7]);
 
@@ -271,69 +247,45 @@ BOOL substrcmp( char *s, char *s1 )
     return(found);
 }
 
-/******************************************************************************
-* FUNCTION: pdi_util_line_no_feed - draw a line without line feed at the end
-*
-* RETURNS: none.
-******************************************************************************/
-void pdi_util_line_no_feed( char type, size_t len )
-{
+void pdi_util_line_no_feed(char type, size_t len){
     size_t i;
 
-    for (i = 0; i < len; i ++) {
+    for(i = 0; i < len; i ++) {
         putchar(type);
     }
 }
 
-/******************************************************************************
-* FUNCTION: pdi_util_line - draw a line with line feed at the end
-*
-* RETURNS: none.
-******************************************************************************/
-void pdi_util_line( char type, size_t len )
-{
+void pdi_util_line( char type, size_t len ){
     pdi_util_line_no_feed(type, len);
     putchar('\n');
 }
 
-/******************************************************************************
-* FUNCTION: _is_mem_read_accessible - check if a piece of memory is readble
-*
-* RETURNS: none.
-******************************************************************************/
-static BOOL _is_mem_read_accessible( void * addr, size_t bytes )
-{
+static BOOL _is_mem_read_accessible( void * addr, size_t bytes ){
     int fd;
     int rc;
     int err;
 
     fd = open("/dev/random", O_WRONLY);
-    if (fd == -1) {
-        /* something unexpected happening here */
+    if(fd == -1){
+        // something unexpected happening here
         printf("Open file 'dev/random' failed: %s\n", strerror(errno));
         return (FALSE);
-    } else {
+    }else{
         rc = write(fd, addr, bytes);
         err = errno;
         close(fd);
-        if (rc == -1) {
-            /* write failed, most likely due to bad address */
-            printf("Write 'dev/random' from %p (size=%u) failed: %s\n",
-                   addr, (unsigned int) bytes, strerror(err));
-            return (FALSE);
+        if(rc == -1){
+            // write failed, most likely due to bad address
+            printf("Write 'dev/random' from %p (size=%u) failed: %s\n", addr, (unsigned int) bytes, strerror(err));
+            return(FALSE);
         }
     }
 
     return (TRUE);
 }
 
-/******************************************************************************
-* FUNCTION: _mem_show - show a piece of memory
-*
-* RETURNS: none.
-******************************************************************************/
-static void _mem_show( unsigned char * addr, size_t bytes )
-{
+
+static void _mem_show( unsigned char * addr, size_t bytes ){
     size_t i;
     size_t j=0;
     unsigned char buff[18];
@@ -341,34 +293,34 @@ static void _mem_show( unsigned char * addr, size_t bytes )
     printf("\nShow memory at %p:\n", addr);
     pdi_util_line('-', 78);
     buff[17] = '\0';
-    for (i = 0; i < bytes; i ++) {
-        if (! (i & 0xF)) {
-            /* first byte in a line, print address */
+    for(i = 0; i < bytes; i ++){
+        if(! (i & 0xF)){
+            // first byte in a line, print address
             printf("%08X: ", (unsigned int)(uintptr_t)(addr + i));
             j = 0;
-        } else if (! (i & 7)) {
-            /* 8th byte in a line, print a separator */
+        }else if(! (i & 7)){
+            // 8th byte in a line, print a separator
             printf(" ");
             buff[j ++] = ' ';
         }
         printf(" %02X", addr[i]);
-        if (isprint(addr[i])) {
+        if(isprint(addr[i])){
             buff[j ++] = addr[i];
         } else {
             buff[j ++] = '.';
         }
-        if ((i & 0xF) == 0xF) {
-            /* last char in a line */
+        if((i & 0xF) == 0xF){
+            // last char in a line
             printf("  %s\n", buff);
         }
     }
 
-    /* print left over */
-    if ((i & 0xF) != 0) {
-        /* last char in a line */
+    // print left over
+    if((i & 0xF) != 0){
+        // last char in a line
         buff[j] = '\0';
         j = (16 - (i & 0xF)) * 3;
-        if ((i & 0xF) <= 8) {
+        if((i & 0xF) <= 8){
             j ++;
         }
         pdi_util_line_no_feed(' ', j);
@@ -378,53 +330,27 @@ static void _mem_show( unsigned char * addr, size_t bytes )
     pdi_util_line('-', 78);
 }
 
-/******************************************************************************
-* FUNCTION: pdi_mem_show - show a piece of memory
-*
-* RETURNS: none.
-*
-* NOTES: 
-* 1. This function can be invoked through PDI client to dump a piece of memory.
-* It is usualloy hooked up with a special symbol "d", which simulates vxWorks
-* command. So the full command syntax is like:
-*   shell> d [address] [size]
-* or
-*   shell> d [symbol] [size]
-* All the arguments can be omitted after the first use. There is a set internal
-* static variables to track the previous command arguments, and automatically
-* adding the address with size for the next use if no argument is provided
-* in the next call. But there is a restriction to such a convenient feature,
-* see next item.
-* 2. This function is not thread-safe, which means if multiple clients use
-* this service at the same time, the auto-filled start pointer and size info
-* will be screwed up with unexpected value, but there should be no other side
-* effect even in such a case. Since this is debugging function, such behavior
-* should be understandable/reasonable/tolerable and if multiple client support
-* is required, the users should use full command instead of the simplified
-* version.
-******************************************************************************/
-#define PDI_MAX_READ_CHARS  (4096)  /* 4K MAX allowed to prevent abusing */
-void pdi_mem_show( intptr_t sym, size_t size )
-{
+
+void pdi_mem_show(intptr_t sym, size_t size){
     static char   * prev_addr = NULL;
     static size_t   prev_bytes = 0x80;
     char          * addr;
     size_t          bytes;
 
     bytes = (size) ? size : prev_bytes;
-    if (bytes > PDI_MAX_READ_CHARS) {
+    if(bytes > PDI_MAX_READ_CHARS){
         printf("Max displaying bytes are: %u\n", PDI_MAX_READ_CHARS);
         return;
     }
 
-    if (sym == 0) {
-        if (! prev_addr) {
+    if(sym == 0) {
+        if(! prev_addr){
             printf("Invalid address input!\n");
             return;
-        } else {
+        }else{
             addr = prev_addr + bytes;
         }
-    } else {
+    }else{
 #if 0
     /* there is a bug in pdi_sym_find_by_name() that if an invalid number 
      * passed in, it will kill the session, so the app. Leave this piece of
@@ -447,16 +373,13 @@ void pdi_mem_show( intptr_t sym, size_t size )
 #endif
     }
 
-    /* now identify if the address is read accessible */
-    if (! _is_mem_read_accessible(addr, bytes)) {
+    if(! _is_mem_read_accessible(addr, bytes)){
         printf("Invalid address: %p (size = 0x%X)\n", addr, (unsigned int)bytes);
         return;
     }
 
-    /* now we can display the memory piece */
     _mem_show((unsigned char *)addr, bytes);
 
-    /* keep the static variables for next time repeat command */
     prev_addr = addr;
     prev_bytes = bytes;
 }

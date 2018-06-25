@@ -1,20 +1,12 @@
-/******************************************************************************
-* Copyright (c) 2011 Ericsson AB.
-* Copyright (c) 2008 Redback Networks, Inc. All rights reserved.
-* This software is the confidential and proprietary information of
-* Redback Networks Inc.
-*
-* Description:
-*
-* The symbol table for use in debug infrastructure.
-******************************************************************************/
-#include "errno.h"
-#include "pdi_sem.h"
-#include "pdi_sym_table.h"
-#include "pdi_demangler.h"
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
+#include <errno.h>
+
+#include "pdi_sym_table.h"
+#include "pdi_sem.h"
+#include "pdi_demangler.h"
+
 
 /* globals */
 
@@ -77,7 +69,7 @@ static BOOL symKeyCmpName( SYMBOL *pMatchSymbol, SYMBOL *pSymbol, int maskArg )
      * match exactly.
      */
 
-    if (maskArg == SYM_MASK_EXACT)
+    if(maskArg == SYM_MASK_EXACT)
         return(pMatchSymbol == pSymbol ? TRUE : FALSE);
 
     mask = (SYM_TYPE) maskArg;
@@ -85,43 +77,27 @@ static BOOL symKeyCmpName( SYMBOL *pMatchSymbol, SYMBOL *pSymbol, int maskArg )
            (strcmp (pMatchSymbol->name, pSymbol->name) == 0));
 }
 
-/******************************************************************************
-* FUNCTION: pdi_sym_tbl_create - create a symbol table
-*
-* RETURNS: Symbol table ID, or NULL if memory is insufficient.
-******************************************************************************/
-SYMTAB_ID pdi_sym_tbl_create( int hashSizeLog2, BOOL sameNameOk )
-{
+
+SYMTAB_ID pdi_sym_tbl_create( int hashSizeLog2, BOOL sameNameOk ){
     SYMTAB_ID symTblId = &pdi_sym_tbl;
 
-    if (symTblId != NULL) {
-        symTblId->nameHashId = pdi_hash_tbl_create (&pdi_hash_tbl,
-                                              pdi_hash_list,
-                                              hashSizeLog2,
-                                              (FUNCPTR) symKeyCmpName,
-                                              (FUNCPTR) symHFuncName,
-                                              SYM_HFUNC_SEED);
+    if(symTblId != NULL){
+        symTblId->nameHashId = pdi_hash_tbl_create(&pdi_hash_tbl, pdi_hash_list, hashSizeLog2, (FUNCPTR) symKeyCmpName, (FUNCPTR)symHFuncName, SYM_HFUNC_SEED);
 
-        if (symTblId->nameHashId == NULL) {   /* pdi_hash_tbl_create failed? */
+        if(symTblId->nameHashId == NULL){
             return(NULL);
         }
 
-        if (pdi_sym_tbl_init (symTblId, sameNameOk, symTblId->nameHashId) != PDI_OK) {
+        if(pdi_sym_tbl_init(symTblId, sameNameOk, symTblId->nameHashId) != PDI_OK){
             return(NULL);
         }
     }
 
-    return(symTblId);              /* return the symbol table ID */
+    return(symTblId);
 }
 
-/******************************************************************************
-* FUNCTION: pdi_sym_tbl_init - initialize a symbol table
-*
-* RETURNS: PDI_OK, or PDI_ERROR if initialization failed.
-******************************************************************************/
-STATUS pdi_sym_tbl_init(SYMTAB *pSymTbl, BOOL sameNameOk, pdi_hash_id_t symHashTblId )
-{
-    if (pdi_sem_create(&pSymTbl->symMutex, mutexOptions) == PDI_ERROR) {
+STATUS pdi_sym_tbl_init(SYMTAB *pSymTbl, BOOL sameNameOk, pdi_hash_id_t symHashTblId ){
+    if(pdi_sem_create(&pSymTbl->symMutex, mutexOptions) == PDI_ERROR){
         return(PDI_ERROR);
     }
 
@@ -147,14 +123,14 @@ SYMBOL *pdi_sym_alloc( SYMTAB_ID   symTblId UNUSED,
     char   *pdi_sym_name;
     int    length;
 
-    if (name == NULL)
+    if(name == NULL)
         return(NULL);              /* null name */
 
     length = strlen (name);         /* figure out name length */
 
     pSymbol = (SYMBOL *) malloc ((sizeof(SYMBOL) + length + 1));
 
-    if (pSymbol == NULL)            /* out of memory */
+    if(pSymbol == NULL)            /* out of memory */
         return(NULL);
 
     /* copy name after symbol */
@@ -219,10 +195,10 @@ STATUS symSAdd( SYMTAB_ID symTblId,
 {
     SYMBOL *pSymbol = pdi_sym_alloc (symTblId, name, value, type, group);
 
-    if (pSymbol == NULL)            /* out of memory? */
+    if(pSymbol == NULL)            /* out of memory? */
         return(PDI_ERROR);
 
-    if (pdi_sym_tbl_add (symTblId, pSymbol) != PDI_OK) {    /* try to add symbol */
+    if(pdi_sym_tbl_add (symTblId, pSymbol) != PDI_OK){    /* try to add symbol */
         pdi_sym_free (symTblId, pSymbol);        /* deallocate symbol if fail */
         return(PDI_ERROR);
     }
@@ -244,16 +220,16 @@ STATUS pdi_sym_add( SYMTAB_ID symTblId,
 {
     SYMBOL *pSymbol = pdi_sym_alloc (symTblId, name, value, type, group);
 
-    if (pSymbol == NULL)            /* out of memory? */
+    if(pSymbol == NULL)            /* out of memory? */
         return(PDI_ERROR);
 
-    if (pdi_sym_tbl_add (symTblId, pSymbol) != PDI_OK) {    /* try to add symbol */
+    if(pdi_sym_tbl_add (symTblId, pSymbol) != PDI_OK){    /* try to add symbol */
         pdi_sym_free (symTblId, pSymbol);        /* deallocate symbol if fail */
         return(PDI_ERROR);
     }
 
     /* synchronize host symbol table if necessary */
-    if ((pdi_sync_sym_add_rtn != NULL) && (symTblId == pdi_sym_tbl_id))
+    if((pdi_sync_sym_add_rtn != NULL) && (symTblId == pdi_sym_tbl_id))
         (* pdi_sync_sym_add_rtn) (name, value, type, group);
 
     return(PDI_OK);
@@ -268,9 +244,9 @@ STATUS pdi_sym_tbl_add( SYMTAB_ID symTblId, SYMBOL *pSymbol )
 {
     pdi_sem_take (&symTblId->symMutex);
 
-    if ((!symTblId->sameNameOk) &&
+    if((!symTblId->sameNameOk) &&
         (pdi_hash_tbl_find (symTblId->nameHashId, &pSymbol->hash_node,
-                      SYM_MASK_EXACT_TYPE) != NULL)) {
+                      SYM_MASK_EXACT_TYPE) != NULL)){
         pdi_sem_give (&symTblId->symMutex);       /* release exclusion to table */
 
         errno = S_symLib_NAME_CLASH;        /* name clashed */
@@ -299,16 +275,16 @@ STATUS pdi_sym_remove( SYMTAB_ID symTblId, char *name, SYM_TYPE  type )
 {
     SYMBOL *pSymbol;
 
-    if (pdi_sym_find_symbol (symTblId, name, NULL,
+    if(pdi_sym_find_symbol (symTblId, name, NULL,
                        type, SYM_MASK_EXACT_TYPE, &pSymbol) != PDI_OK)
         return(PDI_ERROR);
 
-    if (pdi_sym_tbl_remove (symTblId, pSymbol) != PDI_OK)
+    if(pdi_sym_tbl_remove (symTblId, pSymbol) != PDI_OK)
         return(PDI_ERROR);
 
     /* synchronize host symbol table if necessary */
 
-    if ((pdi_sync_sym_remove_rtn != NULL) && (symTblId == pdi_sym_tbl_id))
+    if((pdi_sync_sym_remove_rtn != NULL) && (symTblId == pdi_sym_tbl_id))
         (* pdi_sync_sym_remove_rtn) (name, type);
 
     return(pdi_sym_free (symTblId, pSymbol));
@@ -328,7 +304,7 @@ STATUS pdi_sym_tbl_remove( SYMTAB_ID symTblId, SYMBOL *pSymbol )
     node_p = pdi_hash_tbl_find (symTblId->nameHashId, &pSymbol->hash_node,
                          SYM_MASK_EXACT);
 
-    if (node_p == NULL) {
+    if(node_p == NULL){
         pdi_sem_give (&symTblId->symMutex);       /* release exclusion to table */
 
         errnoSet (S_symLib_SYMBOL_NOT_FOUND);   /* symbol wasn't found */
@@ -368,17 +344,17 @@ STATUS pdi_sym_find_symbol( SYMTAB_ID   symTblId,
     void *      bestValue = NULL;
         /* current value of symbol with matching type */
 
-    if (symTblId == NULL) {
+    if(symTblId == NULL){
         errnoSet (S_symLib_INVALID_SYMTAB_ID);
         return(PDI_ERROR);
     }
 
-    if (pSymbolId == NULL) {
+    if(pSymbolId == NULL){
         errnoSet (S_symLib_INVALID_SYM_ID_PTR);
         return(PDI_ERROR);
     }
 
-    if (name != NULL) {
+    if(name != NULL){
         /* Search by name or by name and type: */
 
         /* fill in keySymbol */
@@ -393,7 +369,7 @@ STATUS pdi_sym_find_symbol( SYMTAB_ID   symTblId,
 
         pdi_sem_give (&symTblId->symMutex);       /* release exclusion to table */
 
-        if (node_p == NULL) {
+        if(node_p == NULL){
             errnoSet (S_symLib_SYMBOL_NOT_FOUND);    /* couldn't find symbol */
             return(PDI_ERROR);
         }
@@ -405,12 +381,12 @@ STATUS pdi_sym_find_symbol( SYMTAB_ID   symTblId,
 
         pdi_sem_take (&symTblId->symMutex);
 
-        for (index = 0; index < symTblId->nameHashId->elements; index++) {
+        for (index = 0; index < symTblId->nameHashId->elements; index++){
             pSymbol =
             (SYMBOL *) SLL_FIRST(&symTblId->nameHashId->hash_tbl_p [index]);
 
-            while (pSymbol != NULL) {         /* list empty */
-                if (((pSymbol->type & mask) == (type & mask)) &&
+            while (pSymbol != NULL){         /* list empty */
+                if(((pSymbol->type & mask) == (type & mask)) &&
                     (pSymbol->value == value) &&
                     (((pUnder = rindex (pSymbol->name, '_')) == NULL) ||
                      ((strcmp (pUnder, "_text") != 0) &&
@@ -418,7 +394,7 @@ STATUS pdi_sym_find_symbol( SYMTAB_ID   symTblId,
                       (strcmp (pUnder, "_bss") != 0) &&
                       (strcmp (pUnder, "_compiled.") != 0))) &&
                     (((pUnder = rindex (pSymbol->name, '.')) == NULL) ||
-                     ((strcmp (pUnder, ".o") != 0)))) {
+                     ((strcmp (pUnder, ".o") != 0)))){
                     /* We've found the entry.  Return it. */
 
                     *pSymbolId = pSymbol;
@@ -428,9 +404,9 @@ STATUS pdi_sym_find_symbol( SYMTAB_ID   symTblId,
                     return(PDI_OK);
                 }
 
-                else if (((pSymbol->type & mask) == (type & mask)) &&
+                else if(((pSymbol->type & mask) == (type & mask)) &&
                          ((pSymbol->value <= value) &&
-                          (pSymbol->value > bestValue))) {
+                          (pSymbol->value > bestValue))){
                     /*
                      * this symbol is of correct type and closer than last one
                      */
@@ -443,7 +419,7 @@ STATUS pdi_sym_find_symbol( SYMTAB_ID   symTblId,
             }
         }
 
-        if (bestValue == NULL || pBestSymbol == NULL) {   /* any closer symbol? */
+        if(bestValue == NULL || pBestSymbol == NULL){   /* any closer symbol? */
             pdi_sem_give (&symTblId->symMutex);   /* release exclusion to table */
 
             errnoSet (S_symLib_SYMBOL_NOT_FOUND);
@@ -491,10 +467,10 @@ STATUS symByCNameFind( SYMTAB_ID   symTblId,
     char *  symBuf = NULL;
     STATUS  retVal;
 
-    if (pdi_sym_find_by_name (symTblId, name, pValue, pType) == PDI_ERROR) {
+    if(pdi_sym_find_by_name (symTblId, name, pValue, pType) == PDI_ERROR){
 
         /* prepend a '_' and try again */
-        if ((symBuf = (char *) KHEAP_ALLOC (strlen (name) + 2)) == NULL)
+        if((symBuf = (char *) KHEAP_ALLOC (strlen (name) + 2)) == NULL)
             return PDI_ERROR;
 
         *symBuf = '_';
@@ -538,14 +514,14 @@ STATUS pdi_sym_find_by_name_and_type( SYMTAB_ID   symTblId,
 {
     SYMBOL  *pSymbol = NULL;
 
-    if (pdi_sym_find_symbol (symTblId, name, NULL, sType,
+    if(pdi_sym_find_symbol (symTblId, name, NULL, sType,
                        mask, &pSymbol) == PDI_ERROR)
         return(PDI_ERROR);
 
-    if (pValue != NULL)
+    if(pValue != NULL)
         *pValue = (char *) pSymbol->value;
 
-    if (pType != NULL)
+    if(pType != NULL)
         *pType = pSymbol->type;
 
     return PDI_OK;
@@ -583,20 +559,20 @@ STATUS pdi_sym_by_value_and_type_find( SYMTAB_ID symTblId,
 {
     SYMBOL *    pSymbol = NULL;
 
-    if (pName == NULL)
+    if(pName == NULL)
         return PDI_ERROR;
 
-    if (pdi_sym_find_symbol(symTblId, NULL, (void *)(uintptr_t)value, sType,
+    if(pdi_sym_find_symbol(symTblId, NULL, (void *)(uintptr_t)value, sType,
                       mask, &pSymbol) != PDI_OK)
         return PDI_ERROR;
 
-    if (pValue != NULL)
+    if(pValue != NULL)
         *pValue = (intptr_t) pSymbol->value;
 
-    if (pType != NULL)
+    if(pType != NULL)
         *pType = pSymbol->type;
 
-    if (((*pName) = (char *) malloc (strlen (pSymbol->name) + 1)) == NULL)
+    if(((*pName) = (char *) malloc (strlen (pSymbol->name) + 1)) == NULL)
         return PDI_ERROR;
 
     strcpy ((*pName), pSymbol->name);
@@ -636,8 +612,8 @@ STATUS pdi_sym_find_by_value_and_type( SYMTAB_ID symTblId,
 {
     SYMBOL * pSymbol = NULL;
 
-    if (pdi_sym_find_symbol (symTblId, NULL, (void *)(uintptr_t)value, sType,
-                       mask, &pSymbol) != PDI_OK) {
+    if(pdi_sym_find_symbol (symTblId, NULL, (void *)(uintptr_t)value, sType,
+                       mask, &pSymbol) != PDI_OK){
 
         return PDI_ERROR;
     }
@@ -646,13 +622,13 @@ STATUS pdi_sym_find_by_value_and_type( SYMTAB_ID symTblId,
 
     /* Null-terminate the string in case the name was truncated. */
 
-    if (name[MAX_SYS_SYM_LEN] != EOS)
+    if(name[MAX_SYS_SYM_LEN] != EOS)
         name[MAX_SYS_SYM_LEN] = EOS;
 
-    if (pValue != NULL)
+    if(pValue != NULL)
         *pValue = (intptr_t) pSymbol->value;
 
-    if (pType != NULL)
+    if(pType != NULL)
         *pType = pSymbol->type;
 
     return(PDI_OK);
@@ -703,7 +679,7 @@ SYMBOL *pdi_sym_each( SYMTAB_ID symTblId, FUNCPTR routine, intptr_t routineArg )
 ******************************************************************************/
 static BOOL symNameValueCmp( char *name, intptr_t val, SYM_TYPE type UNUSED, intptr_t pSym )
 {
-    if (val == (intptr_t)(((SYMBOL *)pSym)->value)) {
+    if(val == (intptr_t)(((SYMBOL *)pSym)->value)){
         ((SYMBOL *)pSym)->name = name;
         return(FALSE);
     }
@@ -735,7 +711,7 @@ const char *pdi_sym_name( SYMTAB_ID symTbl, char *value)
 ******************************************************************************/
 STATUS pdi_sym_name_get( SYMBOL_ID symbolId, const char ** pName)
 {
-    if ((symbolId == NULL) || (pName == NULL))
+    if((symbolId == NULL) || (pName == NULL))
         return PDI_ERROR;
 
     *pName = symbolId->name;
@@ -750,7 +726,7 @@ STATUS pdi_sym_name_get( SYMBOL_ID symbolId, const char ** pName)
 ******************************************************************************/
 STATUS pdi_sym_value_get( SYMBOL_ID symbolId, void ** pValue )
 {
-    if ((symbolId == NULL) || (pValue == NULL))
+    if((symbolId == NULL) || (pValue == NULL))
         return PDI_ERROR;
 
     *pValue = symbolId->value;
@@ -765,7 +741,7 @@ STATUS pdi_sym_value_get( SYMBOL_ID symbolId, void ** pValue )
 ******************************************************************************/
 STATUS symTypeGet(SYMBOL_ID  symbolId, SYM_TYPE * pType)
 {
-    if ((symbolId == NULL) || (pType == NULL))
+    if((symbolId == NULL) || (pType == NULL))
         return PDI_ERROR;
 
     *pType = symbolId->type;
@@ -783,8 +759,8 @@ static char *strMatch( FAST char *str1, FAST char *str2 )
     FAST int str2Length = strlen (str2);
     FAST int ntries = strlen (str1) - str2Length;
 
-    for (; ntries >= 0; str1++, --ntries) {
-        if (strncmp (str1, str2, str2Length) == 0)
+    for (; ntries >= 0; str1++, --ntries){
+        if(strncmp (str1, str2, str2Length) == 0)
             return(str1);  /* we've found a match */
     }
 
@@ -801,7 +777,7 @@ static BOOL symPrint( char * name, int val, int8 type UNUSED, char * substr )
     char         demangled [MAX_SYS_SYM_LEN + 1];
     const char * nameToPrint;
 
-    if (substr == NULL || strMatch (name, substr) != NULL) {
+    if(substr == NULL || strMatch (name, substr) != NULL){
         nameToPrint = pdi_cplus_demangle (name, demangled, MAX_SYS_SYM_LEN + 1, COMPLETE);
         printf ("%-40s 0x%08x\n", nameToPrint, val);
     }
@@ -809,19 +785,12 @@ static BOOL symPrint( char * name, int val, int8 type UNUSED, char * substr )
     return(TRUE);
 }
 
-/******************************************************************************
-* FUNCTION: pdi_sym_show - show the symbols of specified symbol table with matching substring
-*
-* RETURNS: PDI_OK, or PDI_ERROR if invalid symbol table id.
-******************************************************************************/
-STATUS pdi_sym_show( SYMTAB * pSymTbl, char * substr)
-{
-    if (substr == NULL) {
-        printf ("%-20s: %-10d\n", "Number of Symbols", pSymTbl->nsymbols);
-        printf ("%-20s: %-10p\n", "Symbol Mutex Ptr", &pSymTbl->symMutex);
-        printf ("%-20s: %-10p\n", "Symbol Hash Id", pSymTbl->nameHashId);
-        printf ("%-20s: %-10s\n", "Name Clash Policy",
-                (pSymTbl->sameNameOk) ? "Allowed" : "Disallowed");
+STATUS pdi_sym_show( SYMTAB * pSymTbl, char * substr){
+    if(substr == NULL){
+        printf("%-20s: %-10d\n", "Number of Symbols", pSymTbl->nsymbols);
+        printf("%-20s: %-10p\n", "Symbol Mutex Ptr", &pSymTbl->symMutex);
+        printf("%-20s: %-10p\n", "Symbol Hash Id", pSymTbl->nameHashId);
+        printf("%-20s: %-10s\n", "Name Clash Policy", (pSymTbl->sameNameOk) ? "Allowed" : "Disallowed");
     } else {
         pdi_sym_each (pSymTbl, (FUNCPTR) symPrint, (intptr_t) substr);
     }

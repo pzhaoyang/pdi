@@ -9,8 +9,6 @@
 #include "debug_tool_priv.h"
 
 
-#define EXIT_SUCCESS        (0)
-#define EXIT_FAILURE        (1)
 #define PDI_MAX_PROMPT_LEN  (80)
 
 // This PDI debug port number is used for connection between this debug tool
@@ -130,7 +128,7 @@ int main(int argc, char *argv[]){
     while((c = getopt(argc, argv, "hc:p:")) != -1){
         switch (c) {
         case 'p':
-            pdi_debug_port_num = (uint32)atoi(optarg);
+            pdi_debug_port_num = (unsigned int)atoi(optarg);
             if(pdi_debug_port_num >= 0xFFFF || pdi_debug_port_num == 0){
                 printf("debug_tool: invalid PDI port assignment: %s\n", optarg);
                 exit(EXIT_FAILURE);
