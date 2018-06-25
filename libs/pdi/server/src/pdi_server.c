@@ -106,7 +106,7 @@ STATUS pdi_command_loop( void ){
         return PDI_ERROR;
     }
 
-    while (TRUE){
+    while(TRUE){
         if(sockserver_receive(&server,(unsigned char*)&rx_msg, sizeof(pdi_msg_t), &msg_size,&reply_ep) != SOCK_STATUS_SUCCESS){
             syslog(LOG_ERR, "PDI fatal rx error");
             status = PDI_ERROR;
