@@ -11,4 +11,3 @@ SOCK_STATUS sockclient_send( int *socket_num, unsigned char* data_p, unsigned in
 SOCK_STATUS sockclient_receive( int socket_num, unsigned char* data_p, unsigned int buf_len, unsigned int* num_byte_p );
 
 #endif
-
