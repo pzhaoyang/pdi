@@ -11,8 +11,8 @@
 #include <syslog.h>
 #include <sys/prctl.h>
 
-#include "pdi_internal.h"
 #include "pdi_server.h"
+#include "pdi_internal.h"
 #include "pdi_sym_table.h"
 #include "sockserver.h"
 #include "os_proc.h"
@@ -75,7 +75,7 @@ static void string_trim_right( char * str_to_trim ){
 STATUS pdi_execute( FAST char *line){
     STATUS status;
 
-    yystart (line);
+    yystart(line);
     status = (yyparse () == 0) ? PDI_OK : PDI_ERROR;
 
     return(status);
@@ -125,7 +125,7 @@ STATUS pdi_command_loop( void ){
 
         rx_msg.buff [PDI_MAX_LINE_LEN] = EOS;
 
-        for (i = 0; rx_msg.buff [i] == ' '; i++);
+        for(i = 0; rx_msg.buff [i] == ' '; i++);
 
         if(rx_msg.buff [i] != '#' && rx_msg.buff [i] != EOS){
             string_trim_right (&rx_msg.buff[i]);
@@ -145,9 +145,7 @@ STATUS pdi_command_loop( void ){
             close(newstdout_fd);
         }else{
             status = pdi_execute (&rx_msg.buff[i]);
-
             fflush(stdout);
-
             close(newstdout_fd);
         }
 
